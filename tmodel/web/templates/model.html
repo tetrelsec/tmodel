@@ -1,0 +1,29 @@
+{% extends "_model.html" %}
+{% block content %}
+<div class="toolbar">
+  <h2>{{ coll }}</h2>
+  <form class="filter" method="get" action="/m/{{ mid }}/{{ coll }}" role="search">
+    <input type="search" name="q" value="{{ q }}" placeholder="Filter rows…" aria-label="Filter rows" data-filter>
+    {% if sort %}<input type="hidden" name="sort" value="{{ sort }}"><input type="hidden" name="dir" value="{{ 'desc' if desc else 'asc' }}">{% endif %}
+    {% if groupable %}<input type="hidden" name="group" value="{{ group or '' }}">{% endif %}
+  </form>
+  <span class="spacer"></span>
+  <a class="btn" href="/m/{{ mid }}/{{ coll }}/new" data-add="/m/{{ mid }}/{{ coll }}/new/row">+ Add {{ coll[:-1] }}</a>
+</div>
+{% if note %}
+<div class="msg ok">{{ note.text }}{% if note.findings %}
+  <ul class="findings">{% for f in note.findings %}<li class="{{ f.level }}"><span class="lvl">{{ f.level }}</span><span>{{ f.message }}</span><span class="rule">{{ f.rule }}</span></li>{% endfor %}</ul>{% endif %}
+</div>
+{% endif %}
+{% if q %}<p class="muted filtered">{{ rows|length }} of {{ total }} matching <b>{{ q }}</b> · <a href="{{ url(q='') }}">clear</a></p>{% endif %}
+<div class="panel table">
+  <table class="rows">
+    <tr class="head">{% for c in cols %}{% set on = sort == c %}<th><a class="sort{{ ' on' if on }}" href="{{ url(sort=c, dir='' if on and desc else ('desc' if on else '')) }}" title="Sort by {{ c }}">{{ c }}{% if on %} {{ '↓' if desc else '↑' }}{% endif %}</a>{% if c in groupable %} <a data-label="{{ c }}" class="grp{{ ' on' if group == c }}" href="{{ url(group='' if group == c else c) }}" title="{{ 'Stop grouping' if group == c else 'Group rows by ' ~ c }}">{{ '☰ grouped' if group == c else '☰ group' }}</a>{% endif %}</th>{% endfor %}<th></th></tr>
+    {% for eid, cells in rows %}{% if gi is not none and (loop.first or loop.previtem[1][gi] != cells[gi]) %}{% include "_group.html" %}{% endif %}{% with flash=(eid == saved) %}{% include "_row.html" %}{% endwith %}{% endfor %}
+  </table>
+  {% if not total %}<p class="empty" data-empty>No {{ coll }} yet.</p>{% elif not rows %}<p class="empty">No rows match.</p>{% endif %}
+  <p class="muted hint">Click a row to edit it in place, or <b>&#x2197;</b> for the full form.
+    <span class="keys">Keys: <kbd>n</kbd> new row · <kbd>/</kbd> filter · <kbd>Ctrl</kbd>+<kbd>Enter</kbd> save · <kbd>Esc</kbd> cancel.</span>
+    <a href="/m/{{ mid }}/export/{{ coll }}.csv">Download CSV</a></p>
+</div>
+{% endblock %}

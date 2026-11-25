@@ -1,0 +1,67 @@
+# Every pull request and every push to main. Two jobs:
+#   checks   scripts/check.sh: ruff (lint + format) and pytest. Fast; the one to fix first.
+#   browser  the page script in Chromium (tests/test_ui.py on the server), then
+#            scripts/parity.sh: server vs in-browser build on every example model,
+#            before/after against the base branch, and scripts/ui.mjs on the browser
+#            build. Its comparison reports are uploaded for review.
+name: CI
+on:
+  pull_request:
+  push:
+    branches: [main]
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - name: Graphviz (diagram tests)
+        run: sudo apt-get update -q && sudo apt-get install -yq graphviz
+      - run: uv sync --locked
+      - run: scripts/check.sh
+
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # parity.sh compares against the base commit
+      - uses: astral-sh/setup-uv@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Graphviz
+        run: sudo apt-get update -q && sudo apt-get install -yq graphviz
+      - run: uv sync --locked
+      - name: Playwright + Chromium
+        run: npm install --no-save --no-package-lock playwright@1.63.0 && npx playwright install --with-deps chromium
+      - name: Page script on the server (tests/test_ui.py)
+        run: uv run pytest -q -m browser
+      - name: Parity (server vs browser build, before/after) and the page script on the browser build
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          # GitHub sends an all-zero "before" SHA on the first push of a branch.
+          # Compare against HEAD in that case; cross-host checks still run.
+          if [[ -z "$BASE_SHA" || "$BASE_SHA" =~ ^0+$ ]]; then
+            BASE_SHA=HEAD
+          fi
+          scripts/parity.sh "$BASE_SHA"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: parity
+          path: |
+            .parity/before-after.txt
+            .parity/server-browser.txt
+            .parity/ui-browser.txt
+          include-hidden-files: true
+          if-no-files-found: ignore

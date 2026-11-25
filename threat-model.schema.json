@@ -1,0 +1,499 @@
+{
+  "$defs": {
+    "Asset": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "description": "e.g. A_01",
+          "pattern": "^A_[A-Z0-9_]+$",
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "description": {
+          "default": "",
+          "title": "Description",
+          "type": "string"
+        },
+        "domain": {
+          "description": "Domain where the asset resides.",
+          "pattern": "^DOM_[A-Z0-9_]+$",
+          "title": "Domain",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "domain"
+      ],
+      "title": "Asset",
+      "type": "object"
+    },
+    "AttackVector": {
+      "description": "How close an attacker must be. Ordered: Physical is the least remote.",
+      "enum": [
+        "Physical",
+        "Local",
+        "Adjacent",
+        "Network"
+      ],
+      "title": "AttackVector",
+      "type": "string"
+    },
+    "Damage": {
+      "additionalProperties": false,
+      "description": "Damage scenario (21434 clause 15.3).",
+      "properties": {
+        "id": {
+          "description": "e.g. DS_01",
+          "pattern": "^DS_[A-Z0-9_]+$",
+          "title": "Id",
+          "type": "string"
+        },
+        "asset": {
+          "description": "e.g. A_01",
+          "pattern": "^A_[A-Z0-9_]+$",
+          "title": "Asset",
+          "type": "string"
+        },
+        "description": {
+          "title": "Description",
+          "type": "string"
+        },
+        "impact": {
+          "$ref": "#/$defs/Impact"
+        },
+        "properties": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Property"
+          },
+          "description": "Compromised security properties.",
+          "title": "Properties"
+        }
+      },
+      "required": [
+        "id",
+        "asset",
+        "description",
+        "impact"
+      ],
+      "title": "Damage",
+      "type": "object"
+    },
+    "Domain": {
+      "additionalProperties": false,
+      "description": "A trust boundary. A chip or execution environment for a device; a\ndevice or zone for a plant or network.",
+      "properties": {
+        "id": {
+          "description": "e.g. DOM_MCU",
+          "pattern": "^DOM_[A-Z0-9_]+$",
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "description": {
+          "default": "",
+          "title": "Description",
+          "type": "string"
+        },
+        "parent": {
+          "anyOf": [
+            {
+              "description": "e.g. DOM_MCU",
+              "pattern": "^DOM_[A-Z0-9_]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Containing domain; blank for a root. Nesting does not imply connectivity or inherit scope. Domains form a forest with no cycles.",
+          "title": "Parent"
+        },
+        "scope": {
+          "$ref": "#/$defs/Scope",
+          "default": "in",
+          "description": "'out' marks external entities (another ECU, a charger, the internet) that appear on diagrams but aren't assessed."
+        }
+      },
+      "required": [
+        "id",
+        "name"
+      ],
+      "title": "Domain",
+      "type": "object"
+    },
+    "Feasibility": {
+      "enum": [
+        "Very Low",
+        "Low",
+        "Medium",
+        "High"
+      ],
+      "title": "Feasibility",
+      "type": "string"
+    },
+    "Goal": {
+      "additionalProperties": false,
+      "description": "What must hold for a threat's treatment to work. Owned by the product\n(a cybersecurity goal) or by someone else, such as the OEM, integrator\nor operator (a cybersecurity claim).",
+      "properties": {
+        "id": {
+          "description": "e.g. CG_01, or CC_01 for an external goal",
+          "pattern": "^(?:CG|CC)_[A-Z0-9_]+$",
+          "title": "Id",
+          "type": "string"
+        },
+        "owner": {
+          "$ref": "#/$defs/Owner",
+          "default": "product",
+          "description": "product: CG_*, verifiable. external: CC_*, assumed."
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "description": {
+          "default": "",
+          "title": "Description",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "name"
+      ],
+      "title": "Goal",
+      "type": "object"
+    },
+    "Impact": {
+      "enum": [
+        "Negligible",
+        "Moderate",
+        "Major",
+        "Severe"
+      ],
+      "title": "Impact",
+      "type": "string"
+    },
+    "Owner": {
+      "description": "Who must make a goal hold.",
+      "enum": [
+        "product",
+        "external"
+      ],
+      "title": "Owner",
+      "type": "string"
+    },
+    "Property": {
+      "enum": [
+        "C",
+        "I",
+        "A"
+      ],
+      "title": "Property",
+      "type": "string"
+    },
+    "Scope": {
+      "enum": [
+        "in",
+        "out"
+      ],
+      "title": "Scope",
+      "type": "string"
+    },
+    "Step": {
+      "additionalProperties": false,
+      "description": "One attack path step. A plain string in YAML is accepted and means a\nstep with no `via`. `via` names the surface this step crosses, which\nlets the full path be checked against the domain graph and gives agents\na concrete target per hop.",
+      "properties": {
+        "text": {
+          "title": "Text",
+          "type": "string"
+        },
+        "via": {
+          "anyOf": [
+            {
+              "description": "e.g. SURF_CAN",
+              "pattern": "^SURF_[A-Z0-9_]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Via"
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "title": "Step",
+      "type": "object"
+    },
+    "Surface": {
+      "additionalProperties": false,
+      "description": "An interface through which a domain can be reached.",
+      "properties": {
+        "id": {
+          "description": "e.g. SURF_CAN",
+          "pattern": "^SURF_[A-Z0-9_]+$",
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "description": {
+          "default": "",
+          "title": "Description",
+          "type": "string"
+        },
+        "connects": {
+          "description": "Domains joined by this surface. One domain: exposed directly (a debug port). Two or more: an edge between them.",
+          "items": {
+            "description": "e.g. DOM_MCU",
+            "pattern": "^DOM_[A-Z0-9_]+$",
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Connects",
+          "type": "array"
+        },
+        "vector": {
+          "$ref": "#/$defs/AttackVector",
+          "description": "Most remote position from which this surface is reachable. Threats through it inherit this unless they are less remote."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "connects",
+        "vector"
+      ],
+      "title": "Surface",
+      "type": "object"
+    },
+    "Threat": {
+      "additionalProperties": false,
+      "description": "Threat scenario with attack path, feasibility, risk and treatment\n(21434 clauses 15.4 to 15.9).",
+      "properties": {
+        "id": {
+          "description": "e.g. TS_01",
+          "pattern": "^TS_[A-Z0-9_]+$",
+          "title": "Id",
+          "type": "string"
+        },
+        "damage": {
+          "description": "e.g. DS_01",
+          "pattern": "^DS_[A-Z0-9_]+$",
+          "title": "Damage",
+          "type": "string"
+        },
+        "surface": {
+          "anyOf": [
+            {
+              "description": "e.g. SURF_CAN",
+              "pattern": "^SURF_[A-Z0-9_]+$",
+              "type": "string"
+            },
+            {
+              "const": "none",
+              "type": "string"
+            }
+          ],
+          "description": "Entry surface, or 'none' for a design-level threat with no entry point (no secure boot, plaintext keys). Interfaces from an attacker foothold on the device (syscalls, IPC) are real surfaces.",
+          "title": "Surface"
+        },
+        "description": {
+          "title": "Description",
+          "type": "string"
+        },
+        "attack_path": {
+          "description": "Ordered attack steps.",
+          "items": {
+            "$ref": "#/$defs/Step"
+          },
+          "title": "Attack Path",
+          "type": "array"
+        },
+        "vector": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AttackVector"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Omit to inherit the surface's vector. Required when surface is 'none'."
+        },
+        "feasibility": {
+          "$ref": "#/$defs/Feasibility"
+        },
+        "treatment": {
+          "$ref": "#/$defs/Treatment"
+        },
+        "rationale": {
+          "default": "",
+          "description": "Why this treatment; context for reviewers and agents.",
+          "title": "Rationale",
+          "type": "string"
+        },
+        "goals": {
+          "description": "Product goals and external claims.",
+          "items": {
+            "description": "e.g. CG_01, or CC_01 for an external goal",
+            "pattern": "^(?:CG|CC)_[A-Z0-9_]+$",
+            "type": "string"
+          },
+          "title": "Goals",
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "damage",
+        "surface",
+        "description",
+        "feasibility",
+        "treatment"
+      ],
+      "title": "Threat",
+      "type": "object"
+    },
+    "Treatment": {
+      "enum": [
+        "Avoid",
+        "Reduce",
+        "Share",
+        "Retain"
+      ],
+      "title": "Treatment",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "0.1",
+      "default": "0.1",
+      "description": "Format version, owned by the tool.",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "system": {
+      "title": "System",
+      "type": "string"
+    },
+    "revision": {
+      "default": 1,
+      "description": "Model revision, owned by the author. Findings and verdicts reference a revision.",
+      "minimum": 1,
+      "title": "Revision",
+      "type": "integer"
+    },
+    "description": {
+      "default": "",
+      "title": "Description",
+      "type": "string"
+    },
+    "retired_ids": {
+      "description": "Deleted entity IDs, permanently reserved. Do not remove or reuse them.",
+      "items": {
+        "type": "string"
+      },
+      "title": "Retired Ids",
+      "type": "array"
+    },
+    "risk_matrix": {
+      "anyOf": [
+        {
+          "additionalProperties": {
+            "additionalProperties": {
+              "maximum": 5,
+              "minimum": 1,
+              "type": "integer"
+            },
+            "propertyNames": {
+              "$ref": "#/$defs/Feasibility"
+            },
+            "type": "object"
+          },
+          "propertyNames": {
+            "$ref": "#/$defs/Impact"
+          },
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Override of the default impact x feasibility matrix.",
+      "title": "Risk Matrix"
+    },
+    "domains": {
+      "items": {
+        "$ref": "#/$defs/Domain"
+      },
+      "title": "Domains",
+      "type": "array"
+    },
+    "surfaces": {
+      "items": {
+        "$ref": "#/$defs/Surface"
+      },
+      "title": "Surfaces",
+      "type": "array"
+    },
+    "assets": {
+      "items": {
+        "$ref": "#/$defs/Asset"
+      },
+      "title": "Assets",
+      "type": "array"
+    },
+    "damages": {
+      "items": {
+        "$ref": "#/$defs/Damage"
+      },
+      "title": "Damages",
+      "type": "array"
+    },
+    "threats": {
+      "items": {
+        "$ref": "#/$defs/Threat"
+      },
+      "title": "Threats",
+      "type": "array"
+    },
+    "goals": {
+      "items": {
+        "$ref": "#/$defs/Goal"
+      },
+      "title": "Goals",
+      "type": "array"
+    }
+  },
+  "required": [
+    "system",
+    "domains",
+    "surfaces",
+    "assets",
+    "damages",
+    "threats"
+  ],
+  "title": "ThreatModel",
+  "type": "object"
+}

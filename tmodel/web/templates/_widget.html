@@ -1,0 +1,24 @@
+{# one input for a FieldSpec `f`; `form_id` (optional) associates it with a form elsewhere in the DOM #}
+{% set fa = ('form="' ~ form_id ~ '"')|safe if form_id else '' %}
+{% if f.widget == 'text' %}
+  <input id="f-{{ f.name }}" type="text" name="{{ f.name }}" value="{{ f.value }}" {{ fa }} {% if f.readonly %}readonly tabindex="-1"{% endif %}>
+{% elif f.widget == 'number' %}
+  <input id="f-{{ f.name }}" type="number" name="{{ f.name }}" value="{{ f.value }}" {{ fa }} {% if f.readonly %}readonly tabindex="-1"{% endif %}>
+{% elif f.widget == 'textarea' %}
+  <textarea id="f-{{ f.name }}" name="{{ f.name }}" {{ fa }} rows="{{ rows or 3 }}">{{ f.value }}</textarea>
+{% elif f.widget == 'steps' %}
+  <textarea id="f-{{ f.name }}" class="steps" name="{{ f.name }}" {{ fa }} rows="{{ rows or 5 }}">{{ f.value }}</textarea>
+  {% if f.options %}<div class="chips" data-for="f-{{ f.name }}">{% for v, label in f.options %}<button type="button" class="chip" tabindex="-1" data-via="{{ v }}" title="{{ label }}">@{{ v }}</button>{% endfor %}</div>{% endif %}
+{% elif f.widget == 'raw' %}
+  <textarea id="f-{{ f.name }}" class="steps" name="{{ f.name }}" {{ fa }} rows="{{ rows or 4 }}" placeholder="YAML">{{ f.value }}</textarea>
+{% elif f.widget == 'select' %}
+  <select id="f-{{ f.name }}" name="{{ f.name }}" {{ fa }}>
+    {% for v, label in f.options %}<option value="{{ v }}" {% if v == f.value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+  </select>
+{% elif f.widget == 'checkboxes' %}
+  <div class="checks">
+    {% for v, label in f.options %}
+      <label><input type="checkbox" name="{{ f.name }}" value="{{ v }}" {{ fa }} {% if v in f.value %}checked{% endif %}> <span class="{{ 'id' if label != v }}">{{ label }}</span></label>
+    {% else %}<span class="muted">none defined yet</span>{% endfor %}
+  </div>
+{% endif %}

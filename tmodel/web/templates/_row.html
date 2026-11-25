@@ -1,0 +1,7 @@
+{# view-mode table row: `eid`, `cells`, `cols` (names, for phone card labels), `mid`, `coll`, `flash`, `toast` (after an inline save) #}
+<tr data-row="/m/{{ mid }}/{{ coll }}/{{ eid }}/row" class="{{ 'flash' if flash }}"{% if toast %} data-toast="{{ toast }}"{% endif %}>
+  {% for v in cells %}
+    {% if loop.first %}<td class="id">{{ v }}</td>{% else %}<td data-label="{{ cols[loop.index0] }}">{% include "_cell.html" %}</td>{% endif %}
+  {% endfor %}
+  <td class="act"><a href="/m/{{ mid }}/{{ coll }}/{{ eid }}" data-open title="Open in form">&#x2197;</a></td>
+</tr>

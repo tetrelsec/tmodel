@@ -1,0 +1,12 @@
+{% extends "_model.html" %}
+{% block content %}
+<div class="toolbar"><h2>Search</h2><span class="muted">{{ hits|length }} matching <b>{{ query }}</b></span></div>
+<div class="panel">
+  {% if hits %}
+  <table class="hits">
+    {% for eid, c, label in hits %}<tr><td class="id"><a href="{{ href(mid, eid) }}">{{ eid }}</a></td><td class="muted">{{ c[:-1] }}</td><td>{{ label }}</td></tr>{% endfor %}
+  </table>
+  {% else %}<p class="empty">Nothing in this model matches <b>{{ query }}</b>.</p>{% endif %}
+  <p class="muted hint">Type an ID (<code>TS_03</code>, or just <code>ts3</code>) to jump straight to it; any other text searches every field.</p>
+</div>
+{% endblock %}

@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}tmodel{% endblock %}</title>
+{# The page's CSS and script live in web/assets/page.css and page.js; create_app inlines them. #}<style>
+{{ page_css|safe }}</style>
+</head>
+<body>
+<header>
+  <a class="brand" href="/">tmodel</a>
+  {% block header %}{% endblock %}
+</header>
+<main>{% block main %}{% endblock %}</main>
+<footer class="host noprint">tmodel · {{ host.label }}</footer>
+<script>
+{{ page_js|safe }}</script>
+{% if host_script %}<script>
+{{ host_script|safe }}
+</script>{% endif %}
+</body>
+</html>

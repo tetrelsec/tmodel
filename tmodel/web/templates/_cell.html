@@ -1,0 +1,2 @@
+{# one table cell value `v`: plain text, or a list of Refs (linked IDs, short label beside a single one) #}
+{%- if v is string %}{{ v }}{% else %}<span class="refs">{% for r in v %}{% set u = href(mid, r.id) if r.label else none %}{% if u %}<a class="ref" href="{{ u }}" title="{{ r.label }}">{{ r.id }}</a>{% else %}{{ r.id }}{% endif %}{% if r.short %} <span class="ref-name">{{ r.short }}</span>{% endif %}{% if not loop.last %}, {% endif %}{% endfor %}</span>{% endif -%}

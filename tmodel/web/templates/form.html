@@ -1,0 +1,36 @@
+{% extends "_model.html" %}
+{% block content %}
+<div class="toolbar">
+  <h2>{{ 'Edit' if eid else 'New' }} {{ singular }}{% if eid %} <span class="id">{{ eid }}</span>{% endif %}</h2>
+  <span class="spacer"></span>
+  {% if eid %}<a class="btn ghost" href="/m/{{ mid }}/{{ coll }}/new?from={{ eid }}" title="New {{ singular }} prefilled from {{ eid }}">Duplicate</a>{% endif %}
+  <a class="btn ghost" href="/m/{{ mid }}/{{ coll }}">Back</a>
+</div>
+{% if copy_of %}<div class="msg ok">Prefilled from <a class="id" href="{{ href(mid, copy_of) }}">{{ copy_of }}</a>. Check the ID and change what differs.</div>{% endif %}
+{% if errors %}<div class="msg err"><b>Not saved.</b><ul>{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul></div>{% endif %}
+<div class="panel">
+<form class="entity" method="post" action="/m/{{ mid }}/{{ coll }}/{{ eid or 'new' }}">
+  {% if etag %}<input type="hidden" name="_etag" value="{{ etag }}">{% endif %}
+  {% include "_fields.html" %}
+  <div class="actions">
+    <button class="btn" type="submit">Save</button>
+    <a class="btn ghost" href="/m/{{ mid }}/{{ coll }}">Cancel</a>
+    <span class="spacer"></span>
+  </div>
+</form>
+{% if eid %}
+<form class="delete-form" method="post" action="/m/{{ mid }}/{{ coll }}/{{ eid }}/delete"
+      onsubmit="return confirm('Delete {{ eid }}?')">
+  <button class="btn danger" type="submit"{% if used_by %} title="Referenced elsewhere: remove those references first"{% endif %}>Delete</button>
+</form>
+{% endif %}
+</div>
+{% if eid %}
+<div class="panel spaced">
+  <h3>Referenced by</h3>
+  {% if used_by %}
+  <ul class="refs">{% for uid, field in used_by %}<li><a class="id" href="{{ href(mid, uid) }}">{{ uid }}</a> <span class="muted">{{ field }}</span></li>{% endfor %}</ul>
+  {% else %}<p class="muted">Nothing references {{ eid }}.</p>{% endif %}
+</div>
+{% endif %}
+{% endblock %}

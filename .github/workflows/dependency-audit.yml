@@ -1,0 +1,22 @@
+# Separate from fast checks: advisory services require network access.
+name: Dependency audit
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '17 8 * * 1'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  runtime:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - name: Audit the locked server runtime (not the developer tool environment)
+        run: |
+          uv export --locked --no-dev --no-emit-project -o /tmp/runtime.txt
+          uvx --from 'pip-audit>=2.9,<3' pip-audit --disable-pip --no-deps -r /tmp/runtime.txt

@@ -1,0 +1,21 @@
+// Cloudflare Workers (static assets only): serves the in-browser build that
+// `tmodel build-web` writes. No Worker script; the app runs in the visitor's
+// browser. Build: `uv run tmodel build-web -o dist/web` (the build image has uv).
+{
+  "name": "tmodel",
+  "compatibility_date": "2026-10-01",
+  // Serve on <name>.<subdomain>.workers.dev and give every branch Preview its
+  // own URL there (applied by the production `wrangler deploy`).
+  "workers_dev": true,
+  "preview_urls": true,
+  "assets": {
+    "directory": "./dist/web",
+    // A first visit to a deep link (/m/greenhouse/threats) gets the boot shell,
+    // which installs the service worker and reloads into the app.
+    "not_found_handling": "single-page-application"
+  },
+  // Branch previews (`npx wrangler preview`, run by Workers Builds for every
+  // non-production branch) require this block, even empty: the top-level
+  // assets settings above apply to previews too.
+  "previews": {}
+}

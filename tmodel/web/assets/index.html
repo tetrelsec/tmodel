@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>tmodel</title>
+<style>
+  body { margin: 0; font: 14px/1.5 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; color: #1f2937; background: #f8fafc; }
+  main { max-width: 520px; margin: 18vh auto 0; padding: 0 16px; }
+  h1 { font-size: 18px; letter-spacing: .02em; }
+  .muted { color: #6b7280; font-size: 13px; }
+  pre { white-space: pre-wrap; background: #fef2f2; color: #b91c1c; padding: 10px; border-radius: 6px; font-size: 12px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>tmodel</h1>
+  <p id="status">Starting the in-browser editor…</p>
+  <p class="muted">This build runs the tmodel web app in your browser (Python via WebAssembly).
+    The first visit downloads about 15&nbsp;MB; later visits start from cache.
+    Models are stored in this browser only: export anything you want to keep, or,
+    in Chrome or Edge on a computer, open a folder from the model list to save them as files.</p>
+</main>
+<script>
+// Boot shell: served by the static host only until the service worker is in
+// control. After that the worker answers every page, including this URL.
+(async function () {
+  const status = document.getElementById("status");
+  const fail = (msg) => { status.innerHTML = "Could not start: <pre></pre>"; status.querySelector("pre").textContent = msg; };
+  if (!("serviceWorker" in navigator)) return fail("This browser has no service workers (private mode, or an old browser).");
+  try {
+    if (navigator.storage && navigator.storage.persist) navigator.storage.persist();
+    const reg = await navigator.serviceWorker.register("/sw.js", { type: "module" });
+    const worker = reg.installing || reg.waiting || reg.active;
+    if (worker && worker.state !== "activated") {
+      status.textContent = "Loading Python and the app (first visit takes a moment)…";
+      await new Promise((ok, no) => worker.addEventListener("statechange", () => {
+        if (worker.state === "activated") ok();
+        if (worker.state === "redundant") no(new Error("service worker failed to install; see the console"));
+      }));
+    }
+    location.reload();
+  } catch (err) {
+    fail(String(err && err.stack || err));
+  }
+})();
+</script>
+</body>
+</html>

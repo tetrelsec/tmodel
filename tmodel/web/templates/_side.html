@@ -1,0 +1,15 @@
+<div class="side" id="side" data-side="/m/{{ mid }}/side">
+  <div class="panel diagram">
+    {% if svg %}<a href="/m/{{ mid }}/diagram.svg{% if highlight %}?highlight={{ highlight }}{% endif %}" target="_blank" title="Open full size">{{ svg|safe }}</a>{% else %}<p class="empty">Install Graphviz (<code>dot</code>) to see the diagram.</p>{% endif %}
+  </div>
+  <div class="panel">
+    {% set warns = findings|selectattr("level", "equalto", "warn")|list %}
+    {% set infos = findings|selectattr("level", "equalto", "info")|list %}
+    <h3>Lint{% if findings %} <span class="muted n">{{ warns|length }} warn · {{ infos|length }} info</span>{% endif %}</h3>
+    {% macro finding(f) %}{% set u = href(mid, f.entity) %}<li class="{{ f.level }}"><span class="lvl">{{ f.level }}</span><span>{% if u %}<a class="id" href="{{ u }}">{{ f.entity }}</a>{% else %}<span class="id">{{ f.entity }}</span>{% endif %} {{ f.message }}</span><span class="rule">{{ f.rule }}</span></li>{% endmacro %}
+    {% if warns %}<ul class="findings">{% for f in warns %}{{ finding(f) }}{% endfor %}</ul>{% endif %}
+    {% if infos %}<details class="infos"><summary class="muted">{{ infos|length }} info (deliberate choices worth a look)</summary>
+      <ul class="findings">{% for f in infos %}{{ finding(f) }}{% endfor %}</ul></details>{% endif %}
+    {% if not findings %}<p class="muted">Clean.</p>{% endif %}
+  </div>
+</div>

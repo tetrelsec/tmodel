@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# build and tool output
+build/
+dist/
+node_modules/
+.wrangler/
+.parity/
+.dev/
+.mypy_cache/
+
+# Local model data (keep private models outside the source checkout)
+/models/
+
+# default output of `tmodel draw`
+threat-model.svg

@@ -1,0 +1,12 @@
+{% extends "_model.html" %}
+{% set coll = 'yaml' %}
+{% block content %}
+<div class="toolbar"><h2>yaml</h2><span class="muted">saved verbatim, comments kept</span></div>
+{% if saved %}<div class="msg ok">Saved.</div>{% endif %}
+{% if errors %}<div class="msg err"><b>Not saved.</b><ul>{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul></div>{% endif %}
+<form method="post" action="/m/{{ mid }}/yaml">
+  {% if etag %}<input type="hidden" name="_etag" value="{{ etag }}">{% endif %}
+  <textarea class="yaml" name="text" spellcheck="false">{{ text }}</textarea>
+  <div class="actions"><button class="btn" type="submit">Validate &amp; save</button></div>
+</form>
+{% endblock %}

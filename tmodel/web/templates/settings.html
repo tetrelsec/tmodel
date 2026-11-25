@@ -1,0 +1,35 @@
+{% extends "_model.html" %}
+{% set coll = 'settings' %}
+{% block content %}
+<div class="toolbar"><h2>settings</h2></div>
+{% if saved %}<div class="msg ok">Saved.</div>{% endif %}
+{% if errors %}<div class="msg err"><ul>{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul></div>{% endif %}
+<div class="panel">
+<form class="entity" method="post" action="/m/{{ mid }}/settings">
+  {% if etag %}<input type="hidden" name="_etag" value="{{ etag }}">{% endif %}
+  {% include "_fields.html" %}
+  <div class="field"><label>Schema version</label><input type="text" value="{{ model.schema_version }}" readonly tabindex="-1">
+    <div class="help">Owned by the tool.</div></div>
+  <div class="actions"><button class="btn" type="submit">Save</button></div>
+</form>
+</div>
+<div class="panel spaced">
+  <h3>History</h3>
+  {% if history %}
+  <table class="history">
+    {% for c in history %}<tr><td class="mono"><a href="/m/{{ mid }}/history/{{ c.sha }}" title="What changed; restore">{{ c.sha }}</a></td><td class="muted">{{ c.date }}</td><td>{{ c.message }}</td></tr>{% endfor %}
+  </table>
+  <p class="muted hint">Open a commit to see what it changed, or to restore the model as it was then.</p>
+  {% elif git %}<p class="muted">No commits yet.</p>
+  {% else %}<p class="muted">Not a git repository. Run <code>git init</code> in the models directory, or start with <code>tmodel serve --git</code>, to get a commit per save.</p>{% endif %}
+</div>
+<div class="panel spaced">
+  <h3>Copy model</h3>
+  {% if copy_error %}<div class="msg err">{{ copy_error }}</div>{% endif %}
+  <form class="entity inline-form" method="post" action="/m/{{ mid }}/copy">
+    <input type="text" name="id" required pattern="[a-z0-9][a-z0-9_\-]*" placeholder="new-model-id" aria-label="New model ID">
+    <button class="btn ghost" type="submit">Copy</button>
+  </form>
+  <p class="muted hint">Starts a new model from this file, verbatim: reuse domains, surfaces and goals for the next engagement, then delete what does not apply.</p>
+</div>
+{% endblock %}

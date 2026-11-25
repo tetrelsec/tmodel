@@ -1,0 +1,59 @@
+# yaml-language-server: $schema=../threat-model.schema.json
+# Skeleton handset model: domains, surfaces and assets only, to exercise
+# multi-domain diagrams. Damages and threats intentionally minimal.
+
+schema_version: "0.1"
+system: Example handset
+revision: 1
+
+domains:
+  - {id: DOM_HLOS, name: Android (HLOS), parent: DOM_DEVICE}
+  - {id: DOM_TZ, name: TrustZone TEE, parent: DOM_DEVICE}
+  - {id: DOM_MODEM, name: Cellular modem, parent: DOM_DEVICE}
+  - {id: DOM_APP, name: Banking app, parent: DOM_HLOS}
+  - {id: DOM_DEVICE, name: Handset}
+  - {id: DOM_CELL, name: Cellular network, scope: out}
+  - {id: DOM_WIFI, name: Wi-Fi access point, scope: out}
+
+surfaces:
+  - {id: SURF_WIFI, name: Wi-Fi mgmt frames, connects: [DOM_HLOS, DOM_WIFI], vector: Adjacent}
+  - {id: SURF_BASEBAND, name: LTE/5G NAS+RRC, connects: [DOM_MODEM, DOM_CELL], vector: Network}
+  - {id: SURF_IPC_MODEM, name: Modem shared-memory IPC, connects: [DOM_HLOS, DOM_MODEM], vector: Local}
+  - {id: SURF_SMC, name: SMC / TA commands, connects: [DOM_HLOS, DOM_TZ], vector: Local}
+  - {id: SURF_BINDER, name: Binder IPC, connects: [DOM_APP, DOM_HLOS], vector: Local}
+  - {id: SURF_USB, name: USB (ADB/MTP), connects: [DOM_HLOS], vector: Physical}
+  - {id: SURF_SWD, name: SWD debug pads, connects: [DOM_TZ], vector: Physical}
+
+assets:
+  - {id: A_01, name: FBE class keys, domain: DOM_TZ}
+  - {id: A_02, name: Keymaster keys, domain: DOM_TZ}
+  - {id: A_03, name: User data, domain: DOM_HLOS}
+  - {id: A_04, name: Modem firmware, domain: DOM_MODEM}
+  - {id: A_05, name: IMSI / auth keys, domain: DOM_MODEM}
+  - {id: A_06, name: Session tokens, domain: DOM_APP}
+
+damages:
+  - {id: DS_01, asset: A_01, description: User data decryptable, impact: Severe, properties: [C]}
+
+threats:
+  - id: TS_01
+    damage: DS_01
+    surface: SURF_WIFI
+    description: Wi-Fi RCE in HLOS, then escalation into the TEE
+    attack_path:
+      - Exploit Wi-Fi driver for code execution in HLOS
+      - {text: Pivot into the TEE through a TA command handler bug, via: SURF_SMC}
+      - Read class keys from TEE memory
+    feasibility: Low
+    treatment: Reduce
+
+  - id: TS_02
+    damage: DS_01
+    surface: none
+    description: >
+      FBE class keys are not bound to a hardware key, so a full flash image
+      is enough to brute-force the user credential offline.
+    attack_path: [Obtain flash image, Brute-force credential offline, Derive class keys]
+    vector: Physical
+    feasibility: Medium
+    treatment: Reduce

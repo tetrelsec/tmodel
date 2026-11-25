@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}tmodel · models{% endblock %}
+{% block main %}
+<div class="layout">
+  <div>
+    <div class="toolbar"><h2>Models</h2></div>
+    {% if error %}<div class="msg err">{{ error }}</div>{% endif %}
+    {% if imported %}<div class="msg ok">Imported {% for i in imported %}<a class="id" href="/m/{{ i }}">{{ i }}</a>{% if not loop.last %}, {% endif %}{% endfor %}.</div>{% endif %}
+    <div class="panel scroll-x">
+    {% if models %}
+      <table>
+        <tr><th>ID</th><th>System</th><th class="rev">Rev</th><th>Threats</th><th title="Lint warnings">Warn</th><th></th></tr>
+        {% for m in models %}
+        <tr>
+          <td class="id"><a href="/m/{{ m.id }}">{{ m.id }}</a></td>
+          <td>{{ m.system }}{% if m.error %} <span class="muted">— {{ m.error }}</span>{% endif %}</td>
+          <td class="rev">{{ m.revision }}</td>
+          <td>{{ m.threats }}</td>
+          <td>{% if m.id in warns %}{% if warns[m.id] %}<span class="warn-n">{{ warns[m.id] }}</span>{% else %}<span class="muted">0</span>{% endif %}{% endif %}</td>
+          <td><a class="btn ghost small" href="/m/{{ m.id }}/export.yaml">yaml</a>
+              <a class="btn ghost small" href="/m/{{ m.id }}/export.json">json</a></td>
+        </tr>
+        {% endfor %}
+      </table>
+    {% else %}
+      <p class="empty">No models yet. Create one, or drop <code>.yaml</code> files into the models directory.</p>
+    {% endif %}
+    </div>
+  </div>
+  <div class="side">
+    <div class="panel">
+      <h3>New model</h3>
+      <form class="entity" method="post" action="/models">
+        <div class="field"><label>ID <span class="req">*</span></label>
+          <input type="text" name="id" required pattern="[a-z0-9][a-z0-9_-]*" placeholder="my-device">
+          <div class="help">File name: lower-case letters, digits, <code>-</code>, <code>_</code>.</div></div>
+        <div class="field"><label>System</label>
+          <input type="text" name="system" placeholder="Example Controller"></div>
+        <div class="actions"><button class="btn" type="submit">Create</button></div>
+      </form>
+    </div>
+    <div class="panel">
+      <h3>Import</h3>
+      <form class="entity" method="post" action="/models/import" enctype="multipart/form-data">
+        <div class="field"><input type="file" name="file" accept=".yaml,.yml,.zip" multiple required>
+          <div class="help"><code>.yaml</code> files, or a <code>.zip</code> of them. Each becomes a model named after its file; existing models are never overwritten.</div></div>
+        <div class="actions"><button class="btn" type="submit">Import</button>
+          {% if models %}<span class="spacer"></span><a href="/models.zip" title="Every model file, verbatim, as a backup">Download all (.zip)</a>{% endif %}</div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,30 @@
+{# shared chrome for every page inside a model #}
+{% extends "base.html" %}
+{% block title %}{{ model.system if model else mid }} · tmodel{% endblock %}
+{% block header %}
+  <span class="sys">{{ model.system if model else mid }}</span>
+  {% if model %}<span class="muted">rev {{ model.revision }}</span>{% endif %}
+  <span class="spacer"></span>
+  <form class="jump" method="get" action="/m/{{ mid }}/go" role="search">
+    <input type="search" name="id" placeholder="Go to ID or search…" aria-label="Go to ID or search" data-jump>
+  </form>
+  <a href="/m/{{ mid }}/export.yaml">yaml</a>
+  <a href="/m/{{ mid }}/export.json">json</a>
+  <a href="/m/{{ mid }}/diagram.svg" target="_blank">svg</a>
+{% endblock %}
+{% block main %}
+<nav class="tabs">
+  <a href="/m/{{ mid }}/report" class="{{ 'on' if coll == 'report' }}">report</a>
+  {% for c in collections %}
+    <a href="/m/{{ mid }}/{{ c }}" class="{{ 'on' if coll == c }}">{{ c }}{% if model %}<span class="n">{{ model[c]|length }}</span>{% endif %}</a>
+  {% endfor %}
+  <a href="/m/{{ mid }}/yaml" class="{{ 'on' if coll == 'yaml' }}">yaml</a>
+  <a href="/m/{{ mid }}/settings" class="{{ 'on' if coll == 'settings' }}">settings</a>
+</nav>
+{% block layout %}
+<div class="layout">
+  <div>{% block content %}{% endblock %}</div>
+  {% include "_side.html" %}
+</div>
+{% endblock %}
+{% endblock %}

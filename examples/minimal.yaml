@@ -1,0 +1,42 @@
+schema_version: '0.1'
+system: Minimal example
+revision: 1
+domains:
+- id: DOM_MCU
+  name: nRF54 MCU
+surfaces:
+- id: SURF_SWD
+  name: SWD
+  connects:
+  - DOM_MCU
+  vector: Physical
+- id: SURF_UART
+  name: UART
+  connects:
+  - DOM_MCU
+  vector: Physical
+- id: SURF_USB
+  name: External USB Port
+  connects:
+  - DOM_MCU
+  vector: Adjacent
+assets:
+- id: A_01
+  name: Device Identity Key
+  domain: DOM_MCU
+damages:
+- id: DS_01
+  asset: A_01
+  description: Device Identity Key is Obtained by Attacker
+  impact: Major
+  properties:
+  - C
+  - I
+threats:
+- id: TS_01
+  damage: DS_01
+  surface: SURF_SWD
+  description: Key is extracted via debug interface.
+  attack_path: []
+  feasibility: High
+  treatment: Reduce

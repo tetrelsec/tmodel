@@ -1,0 +1,79 @@
+# yaml-language-server: $schema=../threat-model.schema.json
+schema_version: "0.1"
+system: Example greenhouse
+revision: 1
+description: Fictional teaching model for a greenhouse irrigation controller.
+
+domains:
+  - {id: DOM_CONTROLLER, name: Irrigation controller}
+  - {id: DOM_CONSOLE, name: Gardener console, scope: out}
+
+surfaces:
+  - {id: SURF_CONSOLE, name: Console API, connects: [DOM_CONSOLE, DOM_CONTROLLER], vector: Network}
+  - {id: SURF_PANEL, name: Local panel, connects: [DOM_CONTROLLER], vector: Physical}
+  - {id: SURF_SENSOR, name: Moisture sensor input, connects: [DOM_CONTROLLER], vector: Physical}
+
+assets:
+  - {id: A_01, name: Water usage log, domain: DOM_CONTROLLER}
+  - {id: A_02, name: Irrigation schedule, domain: DOM_CONTROLLER}
+  - {id: A_03, name: Pump control, domain: DOM_CONTROLLER}
+
+damages:
+  - {id: DS_01, asset: A_01, description: Water usage history is inaccurate, impact: Negligible, properties: [I]}
+  - {id: DS_02, asset: A_02, description: Plants miss scheduled watering, impact: Moderate, properties: [A]}
+  - {id: DS_03, asset: A_03, description: Excess watering damages plants, impact: Major, properties: [I]}
+  - {id: DS_04, asset: A_02, description: Schedule is disclosed, impact: Negligible, properties: [C]}
+
+threats:
+  - id: TS_01
+    damage: DS_01
+    surface: SURF_CONSOLE
+    description: An unauthorized console user changes water usage records
+    attack_path:
+      - {text: Submit a log edit from the console, via: SURF_CONSOLE}
+    feasibility: High
+    treatment: Reduce
+    goals: [CG_01]
+
+  - id: TS_02
+    damage: DS_01
+    surface: SURF_PANEL
+    description: A visitor clears the local log
+    attack_path: [Open the local panel, Request a log reset]
+    feasibility: Low
+    treatment: Reduce
+    goals: [CG_03]
+
+  - id: TS_03
+    damage: DS_02
+    surface: SURF_SENSOR
+    description: An inaccurate moisture reading suppresses watering
+    attack_path: [Present an incorrect moisture reading, Controller skips watering]
+    feasibility: Medium
+    treatment: Reduce
+    rationale: Use a fallback schedule when the reading is implausible.
+    goals: [CG_02]
+
+  - id: TS_04
+    damage: DS_03
+    surface: SURF_CONSOLE
+    description: An unattended console session requests prolonged watering
+    attack_path: [Use an unattended session, Request an extended watering cycle]
+    feasibility: Medium
+    treatment: Share
+    goals: [CC_01]
+
+  - id: TS_05
+    damage: DS_03
+    surface: none
+    description: A missing runtime limit allows continuous watering
+    vector: Physical
+    feasibility: Low
+    treatment: Reduce
+    goals: [CG_02]
+
+goals:
+  - {id: CG_01, name: Require authorization for console changes}
+  - {id: CG_02, name: Bound pump runtime and handle implausible sensor readings}
+  - {id: CG_03, name: Restrict access to panel maintenance controls}
+  - {id: CC_01, owner: external, name: Gardeners lock unattended console sessions}

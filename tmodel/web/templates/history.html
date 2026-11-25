@@ -1,0 +1,20 @@
+{% extends "_model.html" %}
+{% set coll = 'settings' %}
+{% block content %}
+<div class="toolbar">
+  <h2>Version <span class="id">{{ sha }}</span></h2>
+  {% if entry %}<span class="muted">{{ entry.date }} · {{ entry.message }}</span>{% endif %}
+  <span class="spacer"></span>
+  <a class="btn ghost" href="/m/{{ mid }}/settings">Back</a>
+</div>
+{% if errors %}<div class="msg err"><b>Not restored.</b><ul>{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul></div>{% endif %}
+<div class="panel">
+  <h3>What this commit changed</h3>
+  <pre class="diff">{% for line in diff.splitlines() %}<span class="{{ 'add' if line.startswith('+') and not line.startswith('+++') else ('del' if line.startswith('-') and not line.startswith('---') else ('hunk' if line.startswith('@@') else '')) }}">{{ line }}</span>
+{% endfor %}</pre>
+  <form method="post" action="/m/{{ mid }}/history/{{ sha }}/restore" onsubmit="return confirm('Restore {{ mid }} as it was after {{ sha }}? This is saved as a new commit; nothing is lost.')">
+    <div class="actions"><button class="btn" type="submit">Restore this version</button>
+      <span class="muted">Writes the file as it was after this commit, as a new commit. History is never rewritten.</span></div>
+  </form>
+</div>
+{% endblock %}

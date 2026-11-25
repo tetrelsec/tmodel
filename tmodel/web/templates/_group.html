@@ -1,0 +1,2 @@
+{# section header above the rows sharing a reference (`cells[gi]`) when the table is grouped by `group` #}
+<tr class="group" data-group><th colspan="{{ cols|length + 1 }}">{% for r in cells[gi] %}{% set u = href(mid, r.id) if r.label else none %}{% if u %}<a class="ref" href="{{ u }}">{{ r.id }}</a>{% else %}{{ r.id }}{% endif %}{% if r.label %} <span class="group-name">{{ r.label }}</span>{% endif %}{% else %}<span class="group-name">no {{ group }}</span>{% endfor %}</th></tr>

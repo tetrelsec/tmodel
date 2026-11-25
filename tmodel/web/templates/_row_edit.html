@@ -1,0 +1,27 @@
+{# edit-mode table row. `fields`: one FieldSpec per table column (None for derived-only
+   columns). `new`: blank row for a not-yet-saved entity (id editable, Cancel discards).
+   `cols`: column names (phone card labels). Save/Cancel come last in the row, after every
+   field, so Tab walks the fields in order and then reaches them; the cell is pinned to the
+   right edge (sticky) so a wide, scrolled table never hides them. #}
+{% set form_id = 'row-' ~ eid %}
+<tr data-row="/m/{{ mid }}/{{ coll }}/{{ eid }}/row" class="editing" {% if new %}data-new{% endif %}>
+  {% for f in fields %}
+    {% if loop.first %}
+    <td class="id">
+      {% if new %}{% include "_widget.html" %}{% else %}<div class="id">{{ eid }}</div>{% endif %}
+      {% if errors %}<ul class="row-errors">{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+    </td>
+    {% else %}
+    <td data-label="{{ cols[loop.index0] }}">{% if f %}{% with rows=2 %}{% include "_widget.html" %}{% endwith %}{% else %}<span class="muted">{{ derived[loop.index0] or "—" }}</span>{% endif %}</td>
+    {% endif %}
+  {% endfor %}
+  <td class="act">
+    <form id="{{ form_id }}" method="post" action="/m/{{ mid }}/{{ coll }}/{{ eid }}/row" data-inline>
+      {% if etag %}<input type="hidden" name="_etag" value="{{ etag }}">{% endif %}
+      <button class="btn small" type="submit">Save</button>
+      {% if new %}<button class="btn small" type="submit" name="next" value="1" title="Save, then open another blank row">Save &amp; next</button>{% endif %}
+      <button class="btn ghost small" type="button" data-cancel>Cancel</button>
+      {% if new %}<a class="tiny" href="/m/{{ mid }}/{{ coll }}/new">full form &#x2197;</a>{% endif %}
+    </form>
+  </td>
+</tr>

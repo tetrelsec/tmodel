@@ -1,0 +1,132 @@
+{% extends "_model.html" %}
+{% set coll = 'report' %}
+{% block layout %}
+<div class="report">
+<div class="toolbar">
+  <h2>{{ model.system }} <span class="muted">rev {{ model.revision }}</span></h2>
+  <span class="spacer"></span>
+  <a class="btn ghost small noprint" href="/m/{{ mid }}/report.csv" title="Threat register for a spreadsheet">CSV</a>
+</div>
+{% if model.description %}<p class="lede">{{ model.description }}</p>{% endif %}
+
+<nav class="review-nav noprint" aria-label="Review agenda">
+  <a href="#damage-review">1. Damage &amp; threats</a>
+  <a href="#goal-review">2. Goals &amp; claims</a>
+  <a href="#register">3. Threat detail</a>
+</nav>
+<p class="hint muted">Review each damage scenario, agree the treatment, then check the linked goals and external assumptions.</p>
+
+<div class="overview">
+  <section class="panel">
+    <h3>Risk by impact × feasibility</h3>
+    <table class="heat">
+      <caption>feasibility →</caption>
+      <tr><th>impact ↓</th>{% for f in feasibilities %}<th>{{ f.value }}</th>{% endfor %}</tr>
+      {% for row in grid %}
+      <tr>
+        <th>{{ row[0].impact.value }}</th>
+        {% for c in row %}
+        {% set on = impact == c.impact and feasibility == c.feasibility %}
+        <td class="r{{ c.risk }}{{ ' on' if on }}">
+          <a href="/m/{{ mid }}/report{% if not on %}?impact={{ c.impact.value|urlencode }}&amp;feasibility={{ c.feasibility.value|urlencode }}{% endif %}#register"
+             title="risk {{ c.risk }}{{ ': show only these' if c.threats and not on }}">
+            <span class="risk">{{ c.risk }}</span>
+            {% for id in c.threats %}<span class="tid">{{ id }}</span>{% endfor %}
+          </a>
+        </td>
+        {% endfor %}
+      </tr>
+      {% endfor %}
+    </table>
+    <p class="hint muted">Risk 1 (lowest) to 5. Click a cell to list only its threats.</p>
+  </section>
+  <section class="panel diagram">
+    <h3>System</h3>
+    {% if svg %}<a href="/m/{{ mid }}/diagram.svg" target="_blank" title="Open full size">{{ svg|safe }}</a>{% else %}<p class="empty">Install Graphviz (<code>dot</code>) to see the diagram.</p>{% endif %}
+  </section>
+</div>
+
+<section id="damage-review" class="review-section" aria-labelledby="damage-heading">
+<h2 id="damage-heading">1. Damage &amp; threats</h2>
+<p class="muted">Full model · highest impact first; threats within each scenario highest risk first. Follow a threat ID for its attack path and rationale.</p>
+{% for group in damage_groups %}
+<section class="panel damage-group" id="damage-{{ group.damage.id }}">
+  <h3><a class="id" href="{{ href(mid, group.damage.id) }}">{{ group.damage.id }}</a> · {{ group.damage.description }}</h3>
+  <p>{{ group.domain }} / <strong>{{ group.asset }}</strong> · {{ group.damage.impact.value }} impact · {{ group.threats|length }} threats</p>
+  {% if group.threats %}
+  <table class="review-table">
+    <caption>Threats for {{ group.damage.id }}</caption>
+    <thead><tr><th scope="col">Risk</th><th scope="col">Threat</th><th scope="col">Feasibility</th><th scope="col">Treatment / rationale</th><th scope="col">Goals / claims</th></tr></thead>
+    <tbody>{% for e in group.threats %}
+    <tr>
+      <td data-label="Risk"><span class="risk r{{ e.risk }}">{{ e.risk }}</span></td>
+      <td data-label="Threat"><a class="id" href="/m/{{ mid }}/report#threat-{{ e.threat.id }}">{{ e.threat.id }}</a><div>{{ e.threat.description }}</div></td>
+      <td data-label="Feasibility">{{ e.feasibility.value }}</td>
+      <td data-label="Treatment / rationale"><strong>{{ e.treatment.value }}</strong>{% if e.threat.rationale %}<div>{{ e.threat.rationale }}</div>{% else %}<div class="review-gap">No rationale recorded</div>{% endif %}</td>
+      <td data-label="Goals / claims">{% for g in e.goals %}<div><a href="#goal-{{ g.id }}">{{ g.id }} · {{ g.name }}</a>{% if g.owner.value == 'external' %} <span class="muted">(external claim)</span>{% endif %}</div>{% else %}<span class="review-gap">No goal linked</span>{% endfor %}</td>
+    </tr>
+    {% endfor %}</tbody>
+  </table>
+  {% else %}<p class="review-gap">No threats mapped — confirm whether this damage scenario has been assessed.</p>{% endif %}
+</section>
+{% else %}<p class="empty">No damage scenarios recorded.</p>{% endfor %}
+</section>
+
+<section id="goal-review" class="review-section" aria-labelledby="goal-heading">
+<h2 id="goal-heading">2. Goals &amp; claims → threats</h2>
+<p class="muted">Full model · mappings show intent, not verification. Confirm product goals and challenge external claims with the responsible party.</p>
+{% for mapping in goal_mappings %}
+<section class="panel goal-mapping" id="goal-{{ mapping.goal.id }}">
+  <h3><a class="id" href="{{ href(mid, mapping.goal.id) }}">{{ mapping.goal.id }}</a> · {{ mapping.goal.name }}</h3>
+  <p class="muted">{{ 'External claim · assumed outside the product' if mapping.goal.owner.value == 'external' else 'Product goal · requires verification' }}</p>
+  {% if mapping.goal.description %}<p>{{ mapping.goal.description }}</p>{% endif %}
+  <ul>{% for e in mapping.threats %}
+    <li><a class="id" href="/m/{{ mid }}/report#threat-{{ e.threat.id }}">{{ e.threat.id }}</a> · {{ e.threat.description }}
+      <span class="muted">· risk {{ e.risk }} · {{ e.treatment.value }} · damage <a href="#damage-{{ e.threat.damage }}">{{ e.threat.damage }}</a></span></li>
+  {% else %}<li class="review-gap">No threats mapped — confirm scope or link the relevant threats.</li>{% endfor %}</ul>
+</section>
+{% else %}<p class="empty">No goals or external claims recorded.</p>{% endfor %}
+</section>
+
+<div class="toolbar" id="register">
+  <h2>3. Threat detail</h2>
+  {% if impact %}<span class="muted">{{ impact.value }} impact × {{ feasibility.value }} feasibility ({{ entries|length }})
+    · <a href="/m/{{ mid }}/report#register">show all</a></span>
+  {% else %}<span class="muted">{{ entries|length }}, highest risk first</span>{% endif %}
+</div>
+{% for e in entries %}
+<article class="threat panel" id="threat-{{ e.threat.id }}">
+  <div class="head">
+    <span class="risk r{{ e.risk }}" title="risk {{ e.risk }}">{{ e.risk }}</span>
+    <strong>{{ e.threat.description }}</strong>
+    <a class="noprint on-diagram" href="/m/{{ mid }}/diagram.svg?highlight={{ e.threat.id }}" target="_blank" title="This threat's path on the diagram">diagram</a>
+    <a class="id" href="{{ href(mid, e.threat.id) }}" title="edit">{{ e.threat.id }}</a>
+  </div>
+  <div class="chain">
+    {% if e.surface %}<span class="surface">{{ e.surface }}</span>{% else %}<span class="muted">no entry surface</span>{% endif %}
+    <span class="vector" title="attack vector{{ ', from the surface' if e.vector_inherited }}">{{ e.vector.value }}</span>
+    <span class="arrow">→</span>
+    <span>{{ e.domain }} / <b>{{ e.asset }}</b></span>
+  </div>
+  <p class="damage"><span class="label">Damage</span> {{ e.damage }}
+    <span class="muted">· {{ e.impact.value }} impact × {{ e.feasibility.value }} feasibility</span></p>
+  {% if e.steps %}
+  <ol class="steps">
+    {% for s in e.steps %}<li>{{ s.text }}{% if s.via %} <span class="via">via {{ s.via }}</span>{% endif %}</li>{% endfor %}
+  </ol>
+  {% endif %}
+  <div class="treat">
+    <span class="treatment">{{ e.treatment.value }}</span>
+    {% for g in e.goals %}
+      <a class="goal {{ g.owner.value }}" href="{{ href(mid, g.id) }}" title="{{ g.id }}{{ ': ' ~ g.description if g.description }}">{% if g.owner.value == 'external' %}<span class="label">claim</span> {% endif %}{{ g.name }}</a>
+    {% else %}
+      <span class="gap">no goal linked</span>
+    {% endfor %}
+  </div>
+  {% if e.threat.rationale %}<p class="rationale">{{ e.threat.rationale }}</p>{% endif %}
+</article>
+{% else %}
+<p class="empty">No threats{{ ' in this cell' if impact }}.</p>
+{% endfor %}
+</div>
+{% endblock %}
